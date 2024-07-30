@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "694469168565",
+    "project_id": "translator-aefe6",
+    "storage_bucket": "translator-aefe6.appspot.com"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:694469168565:android:3d8f8c0ac6916097815dfc",
+        "android_client_info": {
+          "package_name": "com.bbws.translator"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyB0w0qQ8dqVSdJMO1wgQlCCCzeslKS48Ws"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
