@@ -16,6 +16,7 @@ import 'package:translator/data/dbhelper.dart';
 class TranslationController extends GetxController {
   final TTSController ttsController = Get.put(TTSController());
   
+  
   final modelManager = OnDeviceTranslatorModelManager();
   Rx<TranslateLanguage> selectedLanguageSource =
       TranslationDb.sourceLanguage.obs;
@@ -24,18 +25,18 @@ class TranslationController extends GetxController {
   // Observable (obs) TextEditingController for translated text:
   final Rx<TextEditingController> translateTextController =
       TextEditingController().obs;
-  RxBool localTranslationEnable = false.obs;
+  
   // Define an observable FocusNode
   final Rx<FocusNode> focusNodeFromTextField = FocusNode().obs;
 
-  final Rx<List<TranslateLanguage>> languagesTranslate = Rx([]);
+  RxList<TranslateLanguage> languagesTranslate = <TranslateLanguage>[].obs;
    RxString selectedLanguage = "en-GB".obs;
   
   var downloadStates = <String, bool>{}.obs;
   var deletionStates = <String, bool>{}.obs;
   // Getter to check if the TextField is focused
   bool get isTextFieldFocused => focusNodeFromTextField.value.hasFocus;
-
+  RxBool localTranslationEnable = TranslationDb.isOffline.obs;
   RxString translatedTextSource = ''.obs;
   RxString translatedTextTarget = ''.obs;
 
@@ -47,6 +48,7 @@ class TranslationController extends GetxController {
     focusNodeFromTextField.value.addListener(() {
       // This triggers the reactive updates in the UI
       focusNodeFromTextField.refresh();
+      languagesTranslate.value=TranslateLanguage.values;
     });
   }
 
@@ -107,10 +109,9 @@ class TranslationController extends GetxController {
       isModelDownloaded = true;
       NavigationService.goBack();
     }
-
-
     return isModelDownloaded;
   }
+
 //====================================================================================================
 // Compress JSON data using gzip
 Uint8List compressData(Map<String, String> data) {
@@ -157,17 +158,21 @@ Map<String, String> decryptText(String encryptedText, String key) {
   Future<String> translateText(BuildContext context ,bool isSource, bool isOnlyTranslate) async {
     // final bool targetLanguage1 = await modelManager.isModelDownloaded(targetLanguage.bcpCode);
     // final bool sourceLanguage1 = await modelManager.isModelDownloaded(sourceLanguage.bcpCode);
-    String translatedText = '....';
+    String translatedTextv = '....';
     // String translatedText = '....';
-    final bool lan1 =
-        await downloadTranslationModel(selectedLanguageSource.value, context);
-    final bool lan2 =
-        await downloadTranslationModel(selectedLanguageTarget.value, context);
+    final bool lan1 = await downloadTranslationModel(selectedLanguageSource.value, context);
+    final bool lan2 = await downloadTranslationModel(selectedLanguageTarget.value, context);
     if (lan1 == true && lan2 == true) {
       final onDeviceTranslator;
-     onDeviceTranslator = OnDeviceTranslator(
+     if (isSource) {
+       onDeviceTranslator = OnDeviceTranslator(
           sourceLanguage: selectedLanguageSource.value,
           targetLanguage: selectedLanguageTarget.value);
+     }else{
+      onDeviceTranslator = OnDeviceTranslator(
+          sourceLanguage: selectedLanguageTarget.value,
+          targetLanguage: selectedLanguageSource.value);
+     }
       // if (isSource) {
       //   translatedTextSource.value = await onDeviceTranslator
       //     .translateText(translateTextController.value.text);
@@ -177,20 +182,22 @@ Map<String, String> decryptText(String encryptedText, String key) {
       // }
       if (isOnlyTranslate) {
         print("Normal translate");
-        translatedText = await onDeviceTranslator.translateText(translateTextController.value.text);
+        translatedTextv = await onDeviceTranslator.translateText(translateTextController.value.text);
+        ttsController.setLanguage(ttsController.targetLanguage.value);
+        ttsController.speak(translatedTextv);
       }else{
+        ttsController.setLanguage( isSource == true? ttsController.targetLanguage.value:ttsController.sourceLanguage.value);
+        
         print("source translate");
-        translatedText = await onDeviceTranslator.translateText(isSource == false? translatedTextTarget.value:translatedTextSource.value);
+        translatedTextv = await onDeviceTranslator.translateText(isSource == false? translatedTextTarget.value:translatedTextSource.value);
+        ttsController.speak(translatedTextv);
       }
       
-      
-      ttsController.speak(translatedText);
     } else {
       print('Faild to Translate Text');
-      translatedText = 'Faild to Translate Text';
+      translatedTextv = 'Faild to Translate Text';
     }
-
-    return translatedText;
+    return translatedTextv;
   }
 
   // delete mlkit translation model
@@ -228,7 +235,8 @@ Map<String, String> decryptText(String encryptedText, String key) {
 
 // Language Selection Pop Up function
   void showLanguageSelectionDialog(BuildContext context, bool isSource) {
-  final SttController sttController = Get.put(SttController());
+  // final SttController sttController = Get.put(SttController());
+  final TTSController ttsController =Get.put(TTSController());
   double height = MediaQuery.of(context).size.height;
   print('Language Support:- ${TranslateLanguage.values.length}');
   showDialog(

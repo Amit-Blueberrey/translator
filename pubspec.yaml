@@ -61,6 +61,9 @@ dependencies:
   google_mlkit_language_id: ^0.11.0
   upgrader: ^10.3.0
   superwallkit_flutter: ^1.2.0
+  translator_plus: ^1.0.1
+  purchases_flutter: ^6.30.2
+  firebase_remote_config: ^5.0.4
   # purchases_flutter: ^6.30.2
 
 

@@ -1,3 +1,6 @@
+import 'dart:io';
+
+import 'package:firebase_analytics/firebase_analytics.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_ripple_animation/ripple_animation.dart';
 import 'package:get/get.dart';
@@ -6,7 +9,8 @@ import 'package:speech_to_text/speech_to_text.dart';
 import 'package:translator/core/controller/sttController.dart';
 import 'package:translator/core/controller/ttsController.dart';
 import 'package:translator/core/utils/color.dart';
-import 'package:translator/features/translation/controllers/translation_controller.dart';
+import 'package:translator/core/utils/translatr_popup.dart';
+import 'package:translator/features/translation/controllers/translation_controller_offline.dart';
 import 'package:translator/features/translation/controllers/widgetController.dart';
 
 class OneOnOneCommunicationPage extends StatefulWidget {
@@ -17,10 +21,12 @@ class OneOnOneCommunicationPage extends StatefulWidget {
 
 class _OneOnOneCommunicationPageState extends State<OneOnOneCommunicationPage> {
   // final WidgetController widgetController = Get.put(WidgetController());
+  
   final TranslationController translationController =
       Get.put(TranslationController());
   final TTSController ttsController = Get.put(TTSController());
   final SttController sttController = Get.put(SttController());
+  final FirebaseAnalytics analytics = FirebaseAnalytics.instance;
   final SpeechToText speech = SpeechToText();
 
   bool speechEnabled = false;
@@ -33,6 +39,7 @@ class _OneOnOneCommunicationPageState extends State<OneOnOneCommunicationPage> {
   void initState() {
     super.initState();
     initSpeech();
+    analytics_send();
   }
 
   void initSpeech() async {
@@ -65,6 +72,7 @@ class _OneOnOneCommunicationPageState extends State<OneOnOneCommunicationPage> {
       );
     }
   }
+
 
   void stopListening(bool isSource) async {
     await speech.stop();
@@ -125,6 +133,16 @@ class _OneOnOneCommunicationPageState extends State<OneOnOneCommunicationPage> {
         : translationController.translatedTextSource.value);
   }
 
+  void analytics_send() async {
+    await analytics.logEvent(name: "one_on_one_translation",parameters: {
+      'source_language':'${translationController.getLanguageName(translationController.selectedLanguageSource.value)}',
+      'target_language':'${translationController.getLanguageName(translationController.selectedLanguageTarget.value)}',
+      'os_type':'${Platform.isIOS? 'IOS':'Android'}',
+    });
+    print("one_on_one analytics send to firebase ");
+  }
+
+
 // ====================================
   final Map<String, String> data = {
     "mac_address": "M:M:M:S:S:S",
@@ -136,6 +154,8 @@ class _OneOnOneCommunicationPageState extends State<OneOnOneCommunicationPage> {
   final String encryptionKey = 'your-encryption-key-here';
 
   //=============================================
+
+
 
   @override
   Widget build(BuildContext context) {
@@ -159,13 +179,14 @@ class _OneOnOneCommunicationPageState extends State<OneOnOneCommunicationPage> {
             onPressed: () async {
               // sttController.printSupportedLanguages();
               // Encrypt the data
-              String encryptedData =
-                  await translationController.encryptText(data, encryptionKey);
-              print('Encrypted Data: $encryptedData');
-              // Decrypt the data
-              Map<String, String> decryptedData = await translationController
-                  .decryptText(encryptedData, encryptionKey);
-              print('Decrypted Data: $decryptedData');
+              // String encryptedData =
+              //     await translationController.encryptText(data, encryptionKey);
+              // print('Encrypted Data: $encryptedData');
+              // // Decrypt the data
+              // Map<String, String> decryptedData = await translationController
+              //     .decryptText(encryptedData, encryptionKey);
+              // print('Decrypted Data: $decryptedData');
+              
             }),
         actions: [
           IconButton(
@@ -398,8 +419,10 @@ class _OneOnOneCommunicationPageState extends State<OneOnOneCommunicationPage> {
               children: [
                 InkWell(
                   onTap: () {
-                    translationController.showLanguageSelectionDialog(
-                        context, true);
+                    // translationController.showLanguageSelectionDialog(
+                    //     context, true);
+                        showBottomSheetForLanguageSelection(context, true);
+                        analytics_send();
                   },
                   child: Container(
                     height: height * 0.06,
@@ -426,12 +449,15 @@ class _OneOnOneCommunicationPageState extends State<OneOnOneCommunicationPage> {
                   icon: Icon(Icons.swap_horiz, color: Colors.blue),
                   onPressed: () {
                     translationController.swapTranslation();
+                    analytics_send();
                   },
                 ),
                 InkWell(
                   onTap: () {
-                    translationController.showLanguageSelectionDialog(
-                        context, false);
+                    // translationController.showLanguageSelectionDialog(
+                    //     context, false);
+                    showBottomSheetForLanguageSelection(context, false);
+                    analytics_send();
                   },
                   child: Container(
                     height: height * 0.06,

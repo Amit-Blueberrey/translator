@@ -2,11 +2,13 @@ import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 
 import 'package:speech_to_text/speech_to_text.dart';
-import 'package:translator/features/translation/controllers/translation_controller.dart';
+import 'package:translator/core/controller/ttsController.dart';
+import 'package:translator/features/translation/controllers/translation_controller_offline.dart';
 
 class SttController extends GetxController {
   final TranslationController translationController =
       Get.put(TranslationController());
+      final TTSController ttsController =Get.put(TTSController());
   // late stt.SpeechToText speech;
   final SpeechToText speech = SpeechToText();
   RxBool isAvailable = false.obs;
@@ -35,12 +37,9 @@ class SttController extends GetxController {
       locales = await speech.locales();
       print("STT language Support ${locales.length}");
       // selectedLanguage.value = 'en-US';
-      updateSelectedLanguageSource(translationController.getLanguageCode(
-          translationController.getLanguageName(
-              translationController.selectedLanguageSource.value)));
-      updateSelectedLanguageTarget(translationController.getLanguageCode(
-          translationController.getLanguageName(
-              translationController.selectedLanguageTarget.value)));
+      updateSelectedLanguageSource(translationController.getLanguageCode(translationController.getLanguageName(translationController.selectedLanguageSource.value)));
+      
+      updateSelectedLanguageTarget(translationController.getLanguageCode(translationController.getLanguageName(translationController.selectedLanguageTarget.value)));
       print(
           "Initialize Selected Language Source for STT ${selectedLanguageSource.value}");
       print(
@@ -98,12 +97,8 @@ class SttController extends GetxController {
   }
 
   void initializeSpeechForNewLanguage() async {
-    updateSelectedLanguageSource(translationController.getLanguageCode(
-        translationController.getLanguageName(
-            translationController.selectedLanguageSource.value)));
-    updateSelectedLanguageTarget(translationController.getLanguageCode(
-        translationController.getLanguageName(
-            translationController.selectedLanguageTarget.value)));
+    updateSelectedLanguageSource(translationController.getLanguageCode(translationController.getLanguageName(translationController.selectedLanguageSource.value)));
+    updateSelectedLanguageTarget(translationController.getLanguageCode(translationController.getLanguageName(translationController.selectedLanguageTarget.value)));
     // selectedLanguageSource.value = translationController.getLanguageCode(translationController.getLanguageName(translationController.selectedLanguageSource.value)) ;
     // selectedLanguageTarget.value = translationController.getLanguageCode(translationController.getLanguageName(translationController.selectedLanguageTarget.value));
      speechEnabled.value = await speech.initialize();
@@ -154,6 +149,8 @@ class SttController extends GetxController {
       // selectedLanguageSource.value = 'es-ES';
       selectedLanguageSource.value = '';
     }
+    ttsController.updateTTSLanguageSource(selectedLanguageSource.value);
+    print("selected TTS language for source ${ttsController.sourceLanguage}");
   }
 
   void updateSelectedLanguageTarget(String localeId) {
@@ -163,6 +160,8 @@ class SttController extends GetxController {
       selectedLanguageTarget.value = '';
       // selectedLanguageTarget.value = 'es-ES';
     }
+    ttsController.updateTTSLanguageTarget(selectedLanguageTarget.value);
+    print("selected TTS language for target ${ttsController.targetLanguage}");
   }
 }
 

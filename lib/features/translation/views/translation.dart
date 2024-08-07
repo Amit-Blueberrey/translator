@@ -7,14 +7,19 @@ import 'package:get/get.dart';
 import 'package:shimmer/shimmer.dart';
 import 'package:speech_to_text/speech_to_text.dart';
 import 'package:superwallkit_flutter/superwallkit_flutter.dart';
+import 'package:translator/core/controller/remortConfigController.dart';
 import 'package:translator/core/controller/sttController.dart';
 import 'package:translator/core/utils/color.dart';
 import 'package:translator/core/utils/translatr_popup.dart';
-import 'package:translator/features/payment/view/payment.dart';
-import 'package:translator/features/translation/controllers/translation_controller.dart';
+
 import 'package:translator/core/controller/ttsController.dart';
-import 'package:translator/features/translation/controllers/widgetController.dart';
+import 'package:translator/data/dbhelper.dart';
+import 'package:translator/features/payment/controller/payment_api_controller.dart';
+import 'package:translator/features/payment/controller/payment_controller.dart';
+import 'package:translator/features/translation/controllers/translation_controller_offline.dart';
+
 import 'package:upgrader/upgrader.dart';
+final GlobalKey<ScaffoldState> paymentKey = GlobalKey<ScaffoldState>();
 
 class translation_home extends StatefulWidget {
   translation_home({super.key});
@@ -32,6 +37,8 @@ class _translation_homeState extends State<translation_home> {
 
   final TTSController ttsController = Get.put(TTSController());
   final SttController sttController = Get.put(SttController());
+  final Paymenthandelcontroller paymenthandelcontroller = Get.put(Paymenthandelcontroller());
+  final RemoteConfigController r = Get.put(RemoteConfigController());
   final SpeechToText speech = SpeechToText();
   final FirebaseAnalytics analytics = FirebaseAnalytics.instance;
 
@@ -44,12 +51,25 @@ class _translation_homeState extends State<translation_home> {
   void initState() {
     super.initState();
     initSpeech();
-    analytics.logEvent(name: "Open first app");
+    analytics_send();
+    if (paymenthandelcontroller.isFirstTime.value) {
+      callRcPurchaseController();
+      paymenthandelcontroller.isFirstTime.value = false;
+    }
+    
+  }
+
+  void analytics_send() async{
+    await analytics.logEvent(name: "open_first_app",parameters: {
+      'paywall_campaine':'${r.paywall.value}',
+      'source_language':'${translationController.getLanguageName(translationController.selectedLanguageSource.value)}',
+      'target_language':'${translationController.getLanguageName(translationController.selectedLanguageTarget.value)}',
+    });
+    print("analytics send to fire base ");
   }
 
   void initSpeech() async {
     _speechEnabled = await speech.initialize();
-
     setState(() {});
   }
 
@@ -99,52 +119,63 @@ class _translation_homeState extends State<translation_home> {
     print(translationController.translatedTextSource.value);
   }
 
-  void showPaywall() {
-    // Create a PaywallPresentationHandler
-    PaywallPresentationHandler handler = PaywallPresentationHandler();
-    handler.onPresent((paywallInfo) async {
-      String name = await paywallInfo.name;
-      print("Handler (onPresent): $name");
+  void callRcPurchaseController ()async{
+    RCPurchaseController rcPurchaseController = RCPurchaseController();
+    
+    Superwall.shared.registerEvent(r.paywall.value, feature: () {
+      // navigation.startWorkout();paywall_lander
+      // print("the paywall ${TranslationDb.paywallOld}");
     });
-    handler.onDismiss((paywallInfo) async {
-      String name = await paywallInfo.name;
-      print("Handler (onDismiss): $name");
-    });
-    handler.onError((error) {
-      print("Handler (onError): ${error}");
-    });
-    handler.onSkip((skipReason) async {
-      String description = await skipReason.description;
-
-      if (skipReason is PaywallSkippedReasonHoldout) {
-        print("Handler (onSkip): $description");
-
-        final experiment = await skipReason.experiment;
-        final experimentId = await experiment.id;
-        print("Holdout with experiment: ${experimentId}");
-      } else if (skipReason is PaywallSkippedReasonNoRuleMatch) {
-        print("Handler (onSkip): $description");
-      } else if (skipReason is PaywallSkippedReasonEventNotFound) {
-        print("Handler (onSkip): $description");
-      } else if (skipReason is PaywallSkippedReasonUserIsSubscribed) {
-        print("Handler (onSkip): $description");
-      } else {
-        print("Handler (onSkip): Unknown skip reason");
-      }
-    });
-
-    // Register the event and attach the handler
-    Superwall.shared.registerEvent("paywall_decline", handler: handler,
-        feature: () {
-      // Feature logic goes here, but in this case, we're only interested in displaying the paywall
-    });
+    await rcPurchaseController.syncSubscriptionStatus();
   }
+
+  // void showPaywall() {
+  //   // Create a PaywallPresentationHandler
+  //   PaywallPresentationHandler handler = PaywallPresentationHandler();
+  //   handler.onPresent((paywallInfo) async {
+  //     String name = await paywallInfo.name;
+  //     print("Handler (onPresent): $name");
+  //   });
+  //   handler.onDismiss((paywallInfo) async {
+  //     String name = await paywallInfo.name;
+  //     print("Handler (onDismiss): $name");
+  //   });
+  //   handler.onError((error) {
+  //     print("Handler (onError): ${error}");
+  //   });
+  //   handler.onSkip((skipReason) async {
+  //     String description = await skipReason.description;
+
+  //     if (skipReason is PaywallSkippedReasonHoldout) {
+  //       print("Handler (onSkip): $description");
+
+  //       final experiment = await skipReason.experiment;
+  //       final experimentId = await experiment.id;
+  //       print("Holdout with experiment: ${experimentId}");
+  //     } else if (skipReason is PaywallSkippedReasonNoRuleMatch) {
+  //       print("Handler (onSkip): $description");
+  //     } else if (skipReason is PaywallSkippedReasonEventNotFound) {
+  //       print("Handler (onSkip): $description");
+  //     } else if (skipReason is PaywallSkippedReasonUserIsSubscribed) {
+  //       print("Handler (onSkip): $description");
+  //     } else {
+  //       print("Handler (onSkip): Unknown skip reason");
+  //     }
+  //   });
+
+  //   // Register the event and attach the handler
+  //   // Superwall.shared.registerEvent("paywall_decline", handler: handler,
+  //   //     feature: () {
+  //   //   // Feature logic goes here, but in this case, we're only interested in displaying the paywall
+  //   // });
+  // }
 
   @override
   Widget build(BuildContext context) {
     double width = MediaQuery.of(context).size.width;
     double height = MediaQuery.of(context).size.height;
     return Scaffold(
+      key: paymentKey,
       backgroundColor: backgroundColor,
       appBar: AppBar(
         backgroundColor: Colors.transparent,
@@ -334,12 +365,12 @@ class _translation_homeState extends State<translation_home> {
                                             .focusNodeFromTextField.value
                                             .unfocus();
                                         translationController
-                                                .translatedTextSource.value =
+                                                .translatedTextTarget.value =
                                             await translationController
                                                 .translateText(
                                                     context, true, true);
                                         print(translationController
-                                            .translatedTextSource.value);
+                                            .translatedTextTarget.value);
                                       },
                                       child: Container(
                                         height: height * 0.04,

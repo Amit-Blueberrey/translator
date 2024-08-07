@@ -46,7 +46,7 @@ target 'Runner' do
 end
 
 # Add this line for minimum iOS deployment target
-$iOSVersion = '12.0'  # or a newer version
+$iOSVersion = '13.0'  # or a newer version
 
 post_install do |installer|
   installer.pods_project.build_configurations.each do |config|

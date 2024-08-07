@@ -5,7 +5,7 @@ import 'package:get/get.dart';
 import 'package:google_mlkit_translation/google_mlkit_translation.dart';
 import 'package:translator/core/utils/color.dart';
 import 'package:translator/data/dbhelper.dart';
-import 'package:translator/features/translation/controllers/translation_controller.dart';
+import 'package:translator/features/translation/controllers/translation_controller_offline.dart';
 
 class ChooseLanguage extends StatelessWidget {
   final bool isSource;
@@ -53,6 +53,7 @@ class ChooseLanguage extends StatelessWidget {
                 children: [
                   _buildSectionTitle(context, 'Recents'),
                   ...TranslateLanguage.values.map((language) {
+                     print("${language.bcpCode} :- ${language.name.capitalizeFirst}");
                     return _buildLanguageTile(context, language, isSource);
                   }).toList(),
                   // _buildSectionTitle(context, 'Popular'),
@@ -81,7 +82,6 @@ class ChooseLanguage extends StatelessWidget {
 Widget _buildLanguageTile(BuildContext context, TranslateLanguage language, bool isSource) {
   double width = MediaQuery.of(context).size.width;
   double height = MediaQuery.of(context).size.height;
-
   return Obx(() {
     bool isDownloading = translationController.downloadStates[language.bcpCode] ?? false;
     bool isDeleting = translationController.deletionStates[language.bcpCode] ?? false;

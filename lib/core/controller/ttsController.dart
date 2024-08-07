@@ -213,7 +213,9 @@ class TTSController extends GetxController {
   var isSpeaking = false.obs;
   var isStopped = true.obs;
   var languages = <String>[].obs;
-  final RxString selectedLanguage = 'en-US'.obs;
+  final RxString sourceLanguage = ''.obs;
+  final RxString targetLanguage = ''.obs;
+  final RxString speechLanguage = ''.obs;
 
   @override
   void onInit() {
@@ -244,12 +246,12 @@ class TTSController extends GetxController {
   }
 
   void setLanguage(String lang) {
-    selectedLanguage.value = lang;
-    flutterTts.setLanguage(lang);
+    speechLanguage.value = lang;
+     flutterTts.setLanguage(lang);
   }
 
   void speak(String text) async {
-    if (selectedLanguage.value.isNotEmpty) {
+    if (speechLanguage.value.isNotEmpty) {
       isSpeaking.value = true;
       await flutterTts.speak(text);
     }
@@ -259,6 +261,8 @@ class TTSController extends GetxController {
     await flutterTts.stop();
     isSpeaking.value = false;
   }
+
+  
 
   void printSupportedLanguages() {
     Get.defaultDialog(
@@ -282,4 +286,25 @@ class TTSController extends GetxController {
       ),
     );
   }
+
+
+  void updateTTSLanguageSource(String languagesId) {
+    if (languages.any((languages) => languages == languagesId)) {
+      sourceLanguage.value = languagesId;
+    } else {
+      sourceLanguage.value = 'es-ES';
+      // sourceLanguage.value = '';
+    }
+  }
+
+  void updateTTSLanguageTarget(String languagesId) {
+    if (languages.any((languages) => languages== languagesId)) {
+      targetLanguage.value = languagesId;
+    } else {
+      // targetLanguage.value= '';
+      targetLanguage.value = 'en-IE';
+    }
+  }
+
+
 }
